@@ -66,7 +66,7 @@ class Promise<Result>
 	
 	
 	// create and execute a promise
-	init(_ executor: (@escaping Resolver, @escaping Rejecter) -> Void) {
+	public init(_ executor: (@escaping Resolver, @escaping Rejecter) -> Void) {
 		executor({ (result: Result) in
 			self.handleResolve(result);
 		}, { (error: Error) in
@@ -127,7 +127,7 @@ class Promise<Result>
 	
 	
 	// handle promise resolution / rejection
-	@discardableResult func then(queue: DispatchQueue = DispatchQueue.main, onresolve resolveHandler: @escaping (Result) -> Void, onreject rejectHandler: @escaping (Error) -> Void) -> Promise<Void> {
+	@discardableResult public func then(queue: DispatchQueue = DispatchQueue.main, onresolve resolveHandler: @escaping (Result) -> Void, onreject rejectHandler: @escaping (Error) -> Void) -> Promise<Void> {
 		return Promise<Void>({ (resolve, reject) in
 			sync.lock();
 			switch(state) {
@@ -163,7 +163,7 @@ class Promise<Result>
 	}
 	
 	// handle promise resolution
-	@discardableResult func then(queue: DispatchQueue = DispatchQueue.main, _ resolveHandler: @escaping (Result) -> Void) -> Promise<Void> {
+	@discardableResult public func then(queue: DispatchQueue = DispatchQueue.main, _ resolveHandler: @escaping (Result) -> Void) -> Promise<Void> {
 		return Promise<Void>({ (resolve, reject) in
 			sync.lock();
 			switch(state) {
@@ -195,7 +195,7 @@ class Promise<Result>
 	}
 	
 	// handle promise resolution
-	func then<NextResult>(queue: DispatchQueue = DispatchQueue.main, _ resolveHandler: @escaping (Result) -> Promise<NextResult>) -> Promise<NextResult> {
+	public func then<NextResult>(queue: DispatchQueue = DispatchQueue.main, _ resolveHandler: @escaping (Result) -> Promise<NextResult>) -> Promise<NextResult> {
 		return Promise<NextResult>({ (resolve, reject) in
 			sync.lock();
 			switch(state) {
@@ -239,7 +239,7 @@ class Promise<Result>
 	}
 	
 	// handle promise rejection
-	@discardableResult func `catch`<ErrorType: Error>(queue: DispatchQueue = DispatchQueue.main, _ rejectHandler: @escaping (ErrorType) -> Void) -> Promise<Result> {
+	@discardableResult public func `catch`<ErrorType: Error>(queue: DispatchQueue = DispatchQueue.main, _ rejectHandler: @escaping (ErrorType) -> Void) -> Promise<Result> {
 		return Promise<Result>({ (resolve, reject) in
 			sync.lock();
 			switch(state) {
@@ -279,7 +279,7 @@ class Promise<Result>
 	}
 	
 	// handle promise rejection + continue
-	func `catch`<ErrorType: Error>(queue: DispatchQueue = DispatchQueue.main, _ rejectHandler: @escaping (ErrorType) -> Promise<Result>) -> Promise<Result> {
+	public func `catch`<ErrorType: Error>(queue: DispatchQueue = DispatchQueue.main, _ rejectHandler: @escaping (ErrorType) -> Promise<Result>) -> Promise<Result> {
 		return Promise<Result>({ (resolve, reject) in
 			sync.lock();
 			switch(state) {
@@ -333,7 +333,7 @@ class Promise<Result>
 	}
 	
 	// handle promise resolution / rejection
-	@discardableResult func finally(queue: DispatchQueue = DispatchQueue.main, _ finallyHandler: @escaping () -> Void) -> Promise<Void> {
+	@discardableResult public func finally(queue: DispatchQueue = DispatchQueue.main, _ finallyHandler: @escaping () -> Void) -> Promise<Void> {
 		return Promise<Void>({ (resolve, reject) in
 			self.then(queue: queue,
 			onresolve: { (result: Result) in
@@ -348,7 +348,7 @@ class Promise<Result>
 	}
 	
 	// handle promise resolution / rejection
-	func finally<NextResult>(queue: DispatchQueue = DispatchQueue.main, _ finallyHandler: @escaping () -> Promise<NextResult>) -> Promise<NextResult> {
+	public func finally<NextResult>(queue: DispatchQueue = DispatchQueue.main, _ finallyHandler: @escaping () -> Promise<NextResult>) -> Promise<NextResult> {
 		return Promise<NextResult>({ (resolve, reject) in
 			self.then(queue: queue,
 			onresolve: { (result: Result) in
@@ -373,14 +373,14 @@ class Promise<Result>
 	}
 	
 	// create a resolved promise
-	static func resolve(_ result: Result) -> Promise<Result> {
+	public static func resolve(_ result: Result) -> Promise<Result> {
 		return Promise<Result>({ (resolve, reject) in
 			resolve(result);
 		});
 	}
 	
 	// create a rejected promise
-	static func reject(_ error: Error) -> Promise<Result> {
+	public static func reject(_ error: Error) -> Promise<Result> {
 		return Promise<Result>({ (resolve, reject) in
 			reject(error);
 		});
