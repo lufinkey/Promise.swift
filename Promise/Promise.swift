@@ -65,6 +65,7 @@ class Promise<Result>
 	private var sync: NSLock = NSLock();
 	
 	
+	// create and execute a promise
 	init(_ executor: (@escaping Resolver, @escaping Rejecter) -> Void) {
 		executor({ (result: Result) in
 			self.handleResolve(result);
@@ -368,6 +369,20 @@ class Promise<Result>
 					reject(error);
 				});
 			});
+		});
+	}
+	
+	// create a resolved promise
+	static func resolve(_ result: Result) -> Promise<Result> {
+		return Promise<Result>({ (resolve, reject) in
+			resolve(result);
+		});
+	}
+	
+	// create a rejected promise
+	static func reject(_ error: Error) -> Promise<Result> {
+		return Promise<Result>({ (resolve, reject) in
+			reject(error);
 		});
 	}
 }
