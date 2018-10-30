@@ -8,12 +8,12 @@
 
 import Foundation
 
-class Promise<Result>
+public class Promise<Result>
 {
-	typealias Resolver = (Result) -> Void;
-	typealias Rejecter = (Error) -> Void;
-	typealias Then<Return> = (Result) -> Return;
-	typealias Catch<ErrorType,Return> = (ErrorType) -> Return;
+	public typealias Resolver = (Result) -> Void;
+	public typealias Rejecter = (Error) -> Void;
+	public typealias Then<Return> = (Result) -> Return;
+	public typealias Catch<ErrorType,Return> = (ErrorType) -> Return;
 	
 	// state to handle resolution / rejection
 	private enum State {
