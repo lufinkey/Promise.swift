@@ -13,6 +13,7 @@ class Promise<Result>
 	typealias Resolver = (Result) -> Void;
 	typealias Rejecter = (Error) -> Void;
 	typealias Then<Return> = (Result) -> Return;
+	typealias Catch<ErrorType,Return> = (ErrorType) -> Return;
 	
 	// state to handle resolution / rejection
 	private enum State {
@@ -129,7 +130,7 @@ class Promise<Result>
 	
 	// handle promise resolution / rejection
 	@discardableResult
-	public func then(queue: DispatchQueue = DispatchQueue.main, onresolve resolveHandler: @escaping Then<Void>, onreject rejectHandler: @escaping (Error) -> Void) -> Promise<Void> {
+	public func then(queue: DispatchQueue = DispatchQueue.main, onresolve resolveHandler: @escaping Then<Void>, onreject rejectHandler: @escaping Catch<Error,Void>) -> Promise<Void> {
 		return Promise<Void>({ (resolve, reject) in
 			sync.lock();
 			switch(state) {
@@ -243,7 +244,7 @@ class Promise<Result>
 	
 	// handle promise rejection
 	@discardableResult
-	public func `catch`<ErrorType: Error>(queue: DispatchQueue = DispatchQueue.main, _ rejectHandler: @escaping (ErrorType) -> Void) -> Promise<Result> {
+	public func `catch`<ErrorType>(queue: DispatchQueue = DispatchQueue.main, _ rejectHandler: @escaping Catch<ErrorType,Void>) -> Promise<Result> {
 		return Promise<Result>({ (resolve, reject) in
 			sync.lock();
 			switch(state) {
@@ -283,7 +284,7 @@ class Promise<Result>
 	}
 	
 	// handle promise rejection + continue
-	public func `catch`<ErrorType: Error>(queue: DispatchQueue = DispatchQueue.main, _ rejectHandler: @escaping (ErrorType) -> Promise<Result>) -> Promise<Result> {
+	public func `catch`<ErrorType>(queue: DispatchQueue = DispatchQueue.main, _ rejectHandler: @escaping Catch<ErrorType,Promise<Result>>) -> Promise<Result> {
 		return Promise<Result>({ (resolve, reject) in
 			sync.lock();
 			switch(state) {
@@ -295,13 +296,12 @@ class Promise<Result>
 					if error is ErrorType {
 						queue.async {
 							rejectHandler(error as! ErrorType).then(
-								onresolve: { (result: Result) in
-									resolve(result);
-								},
-								onreject: { (error: Error) in
-									reject(error);
-								}
-							);
+							onresolve: { (result: Result) in
+								resolve(result);
+							},
+							onreject: { (error: Error) in
+								reject(error);
+							});
 						}
 					}
 					else {
@@ -319,13 +319,12 @@ class Promise<Result>
 				if error is ErrorType {
 					queue.async {
 						rejectHandler(error as! ErrorType).then(
-							onresolve: { (result: Result) in
-								resolve(result);
-							},
-							onreject: { (error: Error) in
-								reject(error);
-							}
-						);
+						onresolve: { (result: Result) in
+							resolve(result);
+						},
+						onreject: { (error: Error) in
+							reject(error);
+						});
 					}
 				}
 				else {

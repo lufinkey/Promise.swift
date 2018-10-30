@@ -10,6 +10,19 @@ import XCTest
 @testable import Promise
 
 class PromiseTests: XCTestCase {
+	
+	public enum TestError: Error {
+		case basic(message: String);
+		
+		public var description: String {
+			get {
+				switch self {
+				case let .basic(message):
+					return message;
+				}
+			}
+		}
+	}
 
     override func setUp() {
         // Put setup code here. This method is called before the invocation of each test method in the class.
@@ -20,16 +33,14 @@ class PromiseTests: XCTestCase {
     }
 
     func testExample() {
-		var promise = Promise<Int>({ (resolve, reject) in
-			resolve(5);
-		});
-		promise.then(queue: DispatchQueue.main, { (result: Int) -> Void in
-			NSLog("then1 %i", result);
-		}).then({ () -> Void in
+		let promise = Promise<Int>.resolve(5);
+		promise.then({ (result: Int) -> Void in
+			NSLog("then1 \(result)");
+		}).then({ (_: Void) -> Promise<Void> in
 			NSLog("then2");
-			return Promise<Void>.catch(Error("ayyyyyy"));
-		}).catch({ (error) in
-			NSLog("catch 1 %@", error.localizedDescription);
+			return Promise<Void>.reject(TestError.basic(message: "ayyy"));
+		}).catch({ (error: Error) -> Void in
+			NSLog("catch1");
 		});
         // This is an example of a functional test case.
         // Use XCTAssert and related functions to verify your tests produce the correct results.
