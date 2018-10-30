@@ -390,3 +390,43 @@ public class Promise<Result>
 		});
 	}
 }
+
+
+public func async<Result>(_ executor: @escaping () throws -> Result) -> Promise<Result> {
+	return Promise<Result>({ (resolve, reject) in
+		DispatchQueue.global().async {
+			do {
+				let result = try executor();
+				resolve(result);
+			}
+			catch {
+				reject(error);
+			}
+		}
+	});
+}
+
+
+public func await<Result>(_ promise: Promise<Result>) throws -> Result {
+	var returnVal: Result? = nil;
+	var throwVal: Error? = nil;
+	
+	let group = DispatchGroup();
+	group.enter();
+	
+	promise.then(
+	onresolve: { (result) in
+		returnVal = result;
+		group.leave();
+	},
+	onreject: { (error) in
+		throwVal = error;
+		group.leave();
+	});
+	
+	group.wait();
+	if throwVal != nil {
+		throw throwVal!
+	}
+	return returnVal!;
+}
