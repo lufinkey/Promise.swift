@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name         = "Promise"
-  s.version      = "1.0.3"
+  s.version      = "1.0.4"
   s.summary      = "Simple Promise class written in swift"
   s.homepage     = "https://github.com/lufinkey/Promise.swift"
   s.license      = { :type => "MIT" }
