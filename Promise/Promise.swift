@@ -402,7 +402,22 @@ public func async<Result>(_ executor: @escaping () throws -> Result) -> Promise<
 			catch {
 				reject(error);
 			}
-		}
+		};
+	});
+}
+
+
+public func sync<Result>(_ executor: @escaping () throws -> Result) -> Promise<Result> {
+	return Promise<Result>({ (resolve, reject) in
+		DispatchQueue.main.async {
+			do {
+				let result = try executor();
+				resolve(result);
+			}
+			catch {
+				reject(error);
+			}
+		};
 	});
 }
 
