@@ -376,6 +376,34 @@ public class Promise<Result>
 		});
 	}
 	
+	// cast to another promise type
+	public func `as`<T>(_ type: T.Type) -> Promise<T> {
+		return Promise<T>({ (resolve, reject) in
+			self.then(onresolve: { (result) in
+				if let tResult = result as? T {
+					resolve(tResult);
+				}
+				else {
+					reject(PromiseError.badCast);
+				}
+			}, onreject: { (error: Error) -> Void in
+				reject(error);
+			});
+		});
+	}
+	
+	
+	// cast to another promise type
+	public func `maybeAs`<T>(_ type: T.Type) -> Promise<T?> {
+		return Promise<T?>({ (resolve, reject) in
+			self.then(onresolve: { (result) in
+				resolve(result as? T);
+			}, onreject: { (error: Error) -> Void in
+				reject(error);
+			});
+		});
+	}
+	
 	// create a resolved promise
 	public static func resolve(_ result: Result) -> Promise<Result> {
 		return Promise<Result>({ (resolve, reject) in
@@ -444,4 +472,9 @@ public func await<Result>(_ promise: Promise<Result>) throws -> Result {
 		throw throwVal!
 	}
 	return returnVal!;
+}
+
+
+public enum PromiseError: Error {
+	case badCast;
 }
