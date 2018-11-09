@@ -417,6 +417,119 @@ public class Promise<Result>
 			reject(error);
 		});
 	}
+	
+	// helper class for Promise.all
+	private class AllData {
+		var sync: NSLock = NSLock();
+		var results: [Result?] = [];
+		var rejected: Bool = false;
+		var counter: Int = 0;
+		
+		init(size: Int) {
+			while results.count < size {
+				results.append(nil);
+			}
+		}
+	}
+	
+	// wait until all the promises are resolved and return the results
+	public static func all(_ promises: [Promise<Result>]) -> Promise<[Result]> {
+		return Promise<[Result]>({ (resolve, reject) in
+			let promiseCount = promises.count;
+			if promiseCount == 0 {
+				resolve([]);
+				return;
+			}
+			
+			let sharedData = AllData(size: promiseCount);
+			
+			let resolveIndex = { (index: Int, result: Result) -> Void in
+				sharedData.sync.lock();
+				if sharedData.rejected {
+					sharedData.sync.unlock();
+					return;
+				}
+				sharedData.results[index] = result;
+				sharedData.counter += 1;
+				let finished = (promiseCount == sharedData.counter);
+				sharedData.sync.unlock();
+				if finished {
+					let results = sharedData.results.map({ (result) -> Result in
+						return result!;
+					});
+					resolve(results);
+				}
+			};
+			
+			let rejectAll = { (error: Error) -> Void in
+				sharedData.sync.lock();
+				if sharedData.rejected {
+					sharedData.sync.unlock();
+					return;
+				}
+				sharedData.rejected = true;
+				sharedData.sync.unlock();
+				reject(error);
+			};
+			
+			for (i, promise) in promises.enumerated() {
+				promise.then(
+					onresolve: { (result: Result) -> Void in
+						resolveIndex(i, result);
+					},
+					onreject: { (error: Error) -> Void in
+						rejectAll(error);
+					}
+				);
+			}
+		});
+	}
+	
+	// helper class for Promise.race
+	private class RaceData {
+		var sync: NSLock = NSLock();
+		var finished: Bool = false;
+	}
+	
+	// return the result of the first promise to finish
+	public static func race(_ promises: [Promise<Result>]) -> Promise<Result> {
+		return Promise<Result>({ (resolve, reject) in
+			let sharedData = RaceData();
+			
+			let resolveIndex = { (result: Result) -> Void in
+				sharedData.sync.lock();
+				if sharedData.finished {
+					sharedData.sync.unlock();
+					return;
+				}
+				sharedData.finished = true;
+				sharedData.sync.unlock();
+				resolve(result);
+			};
+			
+			let rejectAll = { (error: Error) -> Void in
+				sharedData.sync.lock();
+				if sharedData.finished {
+					sharedData.sync.unlock();
+					return;
+				}
+				sharedData.finished = true;
+				sharedData.sync.unlock();
+				reject(error);
+			};
+			
+			for promise in promises {
+				promise.then(
+					onresolve: { (result: Result) -> Void in
+						resolveIndex(result);
+					},
+					onreject: { (error: Error) -> Void in
+						rejectAll(error);
+					}
+				);
+			}
+		});
+	}
 }
 
 
