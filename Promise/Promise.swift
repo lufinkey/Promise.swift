@@ -392,7 +392,6 @@ public class Promise<Result>
 		});
 	}
 	
-	
 	// cast to another promise type
 	public func `maybeAs`<T>(_ type: T.Type) -> Promise<T?> {
 		return Promise<T?>({ (resolve, reject) in
