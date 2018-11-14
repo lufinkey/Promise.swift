@@ -80,7 +80,7 @@ promise.then({ (result: Int) -> Promise<String> in
 });
 ```
 
-If a `catch` function is called, the promise chain will stop unless the `catch` function returns another Promise for the expected result type:
+After a `catch` callback is called, the promise chain will stop unless the callback returns another Promise with the expected result type:
 
 ```swift
 let promise = myAsyncFunction();
@@ -96,13 +96,15 @@ promise.then({ (result: Int) -> Promise<String> in
 });
 ```
 
+Note that this behaviour is different than JavaScript's Promise, [where the chain will continue executing after a `catch` callback](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/catch).
+
 ### Await / Async
 
-This library attempts to mimic the ES8 [Await/Async](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/async_function) flow by providing global `await` and `async` functions.
-These functions can be used to write asynchronous code linearly. You can also use do/try/catch functions, or you can let the async block catch your errors and forward them to the returned Promise.
+This library attempts to mimic the JavaScript [Await/Async](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/async_function) flow by providing global `await` and `async` functions.
+These functions can be used to write asynchronous code linearly. You can also use do/try/catch blocks, or you can let the async block catch your errors and forward them to the returned Promise.
 
 ```swift
-// catching your errors
+// handle errors with do/catch
 func myLinearAsyncFunction1() -> Promise<Int>
 	return async {
 		do {
@@ -119,7 +121,7 @@ func myLinearAsyncFunction1() -> Promise<Int>
 	};
 }
 
-// or let the async block catch your errors
+// or let the async block catch your error and return a rejected Promise if something throws an Error
 func myLinearAsyncFunction2() -> Promise<Int>
 	return async {
 		let result1: Int = try await(myAsyncFunction());
