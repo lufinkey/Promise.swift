@@ -10,6 +10,12 @@ Add the following line to your `Podfile`:
 pod 'Promise', :git => 'https://github.com/lufinkey/Promise.swift.git'
 ```
 
+Then import the library at the top of your swift file:
+
+```swift
+import Promise
+```
+
 ## Usage
 
 This Promise class functions nearly exactly like [JavaScript's Promise class](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise)
