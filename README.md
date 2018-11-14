@@ -1,6 +1,6 @@
 # Promise.swift
 
-A small promise library for swift that mimics JavaScript's Promise and await / async.
+A small promise library for swift that mimics JavaScript's Promise class and await / async keywords.
 
 ## Install
 
