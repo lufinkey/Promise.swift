@@ -122,11 +122,11 @@ func myLinearAsyncFunction1() -> Promise<Int>
 // or let the async block catch your errors
 func myLinearAsyncFunction2() -> Promise<Int>
 	return async {
-    let result1: Int = try await(myAsyncFunction());
-    print("We have the 1st result: \(result1)");
-    let result2: Int = try await(someOtherAsyncFunction());
-    print("We have the 2nd result: \(result2)");
-    return result1 + result2;
+		let result1: Int = try await(myAsyncFunction());
+		print("We have the 1st result: \(result1)");
+		let result2: Int = try await(someOtherAsyncFunction());
+		print("We have the 2nd result: \(result2)");
+		return result1 + result2;
 	};
 }
 ```
