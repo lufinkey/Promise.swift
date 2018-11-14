@@ -3,7 +3,7 @@ Pod::Spec.new do |s|
   s.version      = "1.0.6"
   s.summary      = "Simple Promise class written in swift"
   s.homepage     = "https://github.com/lufinkey/Promise.swift"
-  s.license      = { :type => "MIT" }
+  s.license      = { :type => "Zlib" }
   s.author             = { "Luis Finke" => "luisfinke@gmail.com" }
   s.social_media_url   = "http://twitter.com/lufinkey"
   s.platform     = :ios
