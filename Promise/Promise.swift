@@ -21,7 +21,7 @@ public class Promise<Result>
 		case resolved(result: Result);
 		case rejected(error: Error);
 		
-		public var finished: Bool {
+		var finished: Bool {
 			get {
 				switch(self) {
 				case .executing:
@@ -34,7 +34,7 @@ public class Promise<Result>
 			}
 		}
 		
-		public var result: Result? {
+		var result: Result? {
 			get {
 				switch(self) {
 				case .executing:
@@ -47,7 +47,7 @@ public class Promise<Result>
 			}
 		}
 		
-		public var error: Error? {
+		var error: Error? {
 			get {
 				switch(self) {
 				case .executing:
