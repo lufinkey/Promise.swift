@@ -393,6 +393,42 @@ public class Promise<Result>
 		});
 	}
 	
+	// block and await the result of the promise
+	public func await(queue: DispatchQueue = DispatchQueue.global()) throws -> Result {
+		sync.lock();
+		switch(state) {
+		case let .resolved(result):
+			sync.unlock();
+			return result;
+			
+		case let .rejected(error):
+			sync.unlock();
+			throw error;
+			
+		case .executing:
+			sync.unlock();
+			var returnVal: Result? = nil;
+			var throwVal: Error? = nil;
+			let group = DispatchGroup();
+			group.enter();
+			self.then(
+				queue: queue,
+				onresolve: { (result) in
+					returnVal = result;
+					group.leave();
+				},
+				onreject: { (error) in
+					throwVal = error;
+					group.leave();
+				});
+			group.wait();
+			if let error = throwVal {
+				throw error;
+			}
+			return returnVal!;
+		}
+	}
+	
 	// create a resolved promise
 	public static func resolve(_ result: Result) -> Promise<Result> {
 		return Promise<Result>({ (resolve, reject) in
@@ -552,26 +588,6 @@ public func sync<Result>(_ executor: @escaping () throws -> Result) -> Promise<R
 }
 
 
-public func await<Result>(_ promise: Promise<Result>) throws -> Result {
-	var returnVal: Result? = nil;
-	var throwVal: Error? = nil;
-	
-	let group = DispatchGroup();
-	group.enter();
-	
-	promise.then(
-	onresolve: { (result) in
-		returnVal = result;
-		group.leave();
-	},
-	onreject: { (error) in
-		throwVal = error;
-		group.leave();
-	});
-	
-	group.wait();
-	if throwVal != nil {
-		throw throwVal!
-	}
-	return returnVal!;
+public func await<Result>(queue: DispatchQueue = DispatchQueue.global(), _ promise: Promise<Result>) throws -> Result {
+	return try promise.await(queue: queue);
 }
