@@ -377,19 +377,22 @@ public class Promise<Result>
 	}
 	
 	// map to another result type
-	public func map<T>(_ transform: @escaping (Result) throws -> T) -> Promise<T> {
+	public func map<T>(queue: DispatchQueue = DispatchQueue.global(), _ transform: @escaping (Result) throws -> T) -> Promise<T> {
 		return Promise<T>({ (resolve, reject) in
-			self.then(onresolve: { (result) in
-				do {
-					let mappedResult = try transform(result);
-					resolve(mappedResult);
-				}
-				catch {
+			self.then(
+				queue: queue,
+				onresolve: { (result) in
+					do {
+						let mappedResult = try transform(result);
+						resolve(mappedResult);
+					}
+					catch {
+						reject(error);
+					}
+				},
+				onreject: { (error: Error) -> Void in
 					reject(error);
-				}
-			}, onreject: { (error: Error) -> Void in
-				reject(error);
-			});
+				});
 		});
 	}
 	
