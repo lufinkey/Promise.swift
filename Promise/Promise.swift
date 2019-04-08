@@ -241,9 +241,9 @@ public class Promise<Result> {
 		});
 	}
 	
-	// handle promise rejection
+	// handle promise rejection with generic Error
 	@discardableResult
-	public func `catch`<ErrorType>(queue: DispatchQueue = DispatchQueue.main, _ rejectHandler: @escaping Catch<ErrorType,Void>) -> Promise<Result> {
+	public func `catch`(queue: DispatchQueue = DispatchQueue.main, _ rejectHandler: @escaping Catch<Error,Void>) -> Promise<Result> {
 		return Promise<Result>({ (resolve, reject) in
 			sync.lock();
 			switch(state) {
@@ -252,9 +252,40 @@ public class Promise<Result> {
 					resolve(result);
 				});
 				rejecters.append({ (error: Error) in
-					if error is ErrorType {
+					queue.async {
+						rejectHandler(error);
+					}
+				});
+				sync.unlock();
+				break;
+			case .resolved(let result):
+				sync.unlock();
+				resolve(result);
+				break;
+			case .rejected(let error):
+				sync.unlock();
+				queue.async {
+					rejectHandler(error);
+				}
+				break;
+			}
+		});
+	}
+	
+	// handle promise rejection with specialized Error
+	@discardableResult
+	public func `catch`<ErrorType: Error>(queue: DispatchQueue = DispatchQueue.main, _ rejectHandler: @escaping Catch<ErrorType,Void>) -> Promise<Result> {
+		return Promise<Result>({ (resolve, reject) in
+			sync.lock();
+			switch(state) {
+			case .executing:
+				resolvers.append({ (result: Result) in
+					resolve(result);
+				});
+				rejecters.append({ (error: Error) in
+					if let error = error as? ErrorType {
 						queue.async {
-							rejectHandler(error as! ErrorType);
+							rejectHandler(error);
 						}
 					}
 					else {
@@ -269,9 +300,9 @@ public class Promise<Result> {
 				break;
 			case .rejected(let error):
 				sync.unlock();
-				if error is ErrorType {
+				if let error = error as? ErrorType {
 					queue.async {
-						rejectHandler(error as! ErrorType);
+						rejectHandler(error);
 					}
 				}
 				else {
@@ -282,8 +313,8 @@ public class Promise<Result> {
 		});
 	}
 	
-	// handle promise rejection + continue
-	public func `catch`<ErrorType>(queue: DispatchQueue = DispatchQueue.main, _ rejectHandler: @escaping Catch<ErrorType,Promise<Result>>) -> Promise<Result> {
+	// handle promise rejection with generic Error + continue
+	public func `catch`(queue: DispatchQueue = DispatchQueue.main, _ rejectHandler: @escaping Catch<Error,Promise<Result>>) -> Promise<Result> {
 		return Promise<Result>({ (resolve, reject) in
 			sync.lock();
 			switch(state) {
@@ -292,9 +323,51 @@ public class Promise<Result> {
 					resolve(result);
 				});
 				rejecters.append({ (error: Error) in
-					if error is ErrorType {
+					queue.async {
+						rejectHandler(error).then(queue: queue,
+						onresolve: { (result: Result) in
+							resolve(result);
+						},
+						onreject: { (error: Error) in
+							reject(error);
+						});
+					}
+				});
+				sync.unlock();
+				break;
+			case .resolved(let result):
+				sync.unlock();
+				resolve(result);
+				break;
+			case .rejected(let error):
+				sync.unlock();
+				queue.async {
+					rejectHandler(error).then(queue: queue,
+					onresolve: { (result: Result) in
+						resolve(result);
+					},
+					onreject: { (error: Error) in
+						reject(error);
+					});
+				}
+				break;
+			}
+		});
+	}
+	
+	// handle promise rejection + continue
+	public func `catch`<ErrorType: Error>(queue: DispatchQueue = DispatchQueue.main, _ rejectHandler: @escaping Catch<ErrorType,Promise<Result>>) -> Promise<Result> {
+		return Promise<Result>({ (resolve, reject) in
+			sync.lock();
+			switch(state) {
+			case .executing:
+				resolvers.append({ (result: Result) in
+					resolve(result);
+				});
+				rejecters.append({ (error: Error) in
+					if let error = error as? ErrorType {
 						queue.async {
-							rejectHandler(error as! ErrorType).then(
+							rejectHandler(error).then(queue: queue,
 							onresolve: { (result: Result) in
 								resolve(result);
 							},
@@ -315,9 +388,9 @@ public class Promise<Result> {
 				break;
 			case .rejected(let error):
 				sync.unlock();
-				if error is ErrorType {
+				if let error = error as? ErrorType {
 					queue.async {
-						rejectHandler(error as! ErrorType).then(
+						rejectHandler(error).then(queue: queue,
 						onresolve: { (result: Result) in
 							resolve(result);
 						},
