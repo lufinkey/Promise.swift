@@ -39,7 +39,7 @@ class PromiseTests: XCTestCase {
 		}).then({ (_: Void) -> Promise<Void> in
 			NSLog("then2");
 			return Promise<Void>.reject(TestError.basic(message: "ayyy"));
-		}).catch({ (error) in
+		}).catch({ (error) -> Void in
 			NSLog("catch1");
 		});
         // This is an example of a functional test case.
