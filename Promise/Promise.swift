@@ -8,8 +8,7 @@
 
 import Foundation
 
-public class Promise<Result>
-{
+public class Promise<Result> {
 	public typealias Resolver = (Result) -> Void;
 	public typealias Rejecter = (Error) -> Void;
 	public typealias Then<Return> = (Result) -> Return;
@@ -430,6 +429,20 @@ public class Promise<Result>
 			}
 			return returnVal!;
 		}
+	}
+	
+	// convert promise type to Any
+	public func toAny(queue: DispatchQueue = DispatchQueue.global()) -> Promise<Any> {
+		return Promise<Any>({ (resolve, reject) in
+			self.then(
+				queue: queue,
+				onresolve: { (result) in
+					resolve(result as Any);
+				},
+				onreject: { (error: Error) -> Void in
+					reject(error);
+				});
+		});
 	}
 	
 	// create a resolved promise
