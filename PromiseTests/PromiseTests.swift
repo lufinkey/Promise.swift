@@ -34,12 +34,12 @@ class PromiseTests: XCTestCase {
 
     func testExample() {
 		let promise = Promise<Int>.resolve(5);
-		promise.then({ (result: Int) -> Void in
+		promise.then({ (result: Int) in
 			NSLog("then1 \(result)");
-		}).then({ (_: Void) -> Promise<Void> in
+		}).then({ _ -> Promise<Void> in
 			NSLog("then2");
 			return Promise<Void>.reject(TestError.basic(message: "ayyy"));
-		}).catch({ (error) -> Void in
+		}).catch({ (error) in
 			NSLog("catch1");
 		});
         // This is an example of a functional test case.

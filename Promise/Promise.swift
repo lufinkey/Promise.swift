@@ -12,7 +12,9 @@ public class Promise<Result> {
 	public typealias Resolver = (Result) -> Void;
 	public typealias Rejecter = (Error) -> Void;
 	public typealias Then<Return> = (Result) -> Return;
+	public typealias ThenThrows<Return> = (Result) throws -> Return;
 	public typealias Catch<ErrorType,Return> = (ErrorType) -> Return;
+	public typealias CatchThrows<ErrorType,Return> = (ErrorType) throws -> Return;
 	
 	// state to handle resolution / rejection
 	private enum State {
@@ -166,15 +168,20 @@ public class Promise<Result> {
 	
 	// handle promise resolution
 	@discardableResult
-	public func then(queue: DispatchQueue = DispatchQueue.main, _ resolveHandler: @escaping Then<Void>) -> Promise<Void> {
+	public func then(queue: DispatchQueue = DispatchQueue.main, _ resolveHandler: @escaping ThenThrows<Void>) -> Promise<Void> {
 		return Promise<Void>({ (resolve, reject) in
 			sync.lock();
 			switch(state) {
 			case .executing:
 				resolvers.append({ (result: Result) in
 					queue.async {
-						resolveHandler(result);
-						resolve(Void());
+						do {
+							try resolveHandler(result);
+							resolve(());
+						}
+						catch {
+							reject(error);
+						}
 					}
 				});
 				rejecters.append({ (error: Error) in
@@ -185,8 +192,13 @@ public class Promise<Result> {
 			case .resolved(let result):
 				sync.unlock();
 				queue.async {
-					resolveHandler(result);
-					resolve(Void());
+					do {
+						try resolveHandler(result);
+						resolve(());
+					}
+					catch {
+						reject(error);
+					}
 				}
 				break;
 			case .rejected(let error):
@@ -243,7 +255,7 @@ public class Promise<Result> {
 	
 	// handle promise rejection with generic Error
 	@discardableResult
-	public func `catch`(queue: DispatchQueue = DispatchQueue.main, _ rejectHandler: @escaping Catch<Error,Void>) -> Promise<Result> {
+	public func `catch`(queue: DispatchQueue = DispatchQueue.main, _ rejectHandler: @escaping CatchThrows<Error,Result>) -> Promise<Result> {
 		return Promise<Result>({ (resolve, reject) in
 			sync.lock();
 			switch(state) {
@@ -253,7 +265,13 @@ public class Promise<Result> {
 				});
 				rejecters.append({ (error: Error) in
 					queue.async {
-						rejectHandler(error);
+						do {
+							let result = try rejectHandler(error);
+							resolve(result);
+						}
+						catch {
+							reject(error);
+						}
 					}
 				});
 				sync.unlock();
@@ -265,7 +283,13 @@ public class Promise<Result> {
 			case .rejected(let error):
 				sync.unlock();
 				queue.async {
-					rejectHandler(error);
+					do {
+						let result = try rejectHandler(error);
+						resolve(result);
+					}
+					catch {
+						reject(error);
+					}
 				}
 				break;
 			}
@@ -274,7 +298,7 @@ public class Promise<Result> {
 	
 	// handle promise rejection with specialized Error
 	@discardableResult
-	public func `catch`<ErrorType: Error>(queue: DispatchQueue = DispatchQueue.main, _ rejectHandler: @escaping Catch<ErrorType,Void>) -> Promise<Result> {
+	public func `catch`<ErrorType: Error>(queue: DispatchQueue = DispatchQueue.main, _ rejectHandler: @escaping CatchThrows<ErrorType,Result>) -> Promise<Result> {
 		return Promise<Result>({ (resolve, reject) in
 			sync.lock();
 			switch(state) {
@@ -285,7 +309,13 @@ public class Promise<Result> {
 				rejecters.append({ (error: Error) in
 					if let error = error as? ErrorType {
 						queue.async {
-							rejectHandler(error);
+							do {
+								let result = try rejectHandler(error);
+								resolve(result);
+							}
+							catch {
+								reject(error);
+							}
 						}
 					}
 					else {
@@ -302,7 +332,13 @@ public class Promise<Result> {
 				sync.unlock();
 				if let error = error as? ErrorType {
 					queue.async {
-						rejectHandler(error);
+						do {
+							let result = try rejectHandler(error);
+							resolve(result);
+						}
+						catch {
+							reject(error);
+						}
 					}
 				}
 				else {
