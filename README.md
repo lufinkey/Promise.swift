@@ -86,22 +86,6 @@ promise.then({ (result: Int) -> Promise<String> in
 });
 ```
 
-After a `catch` callback is called, the promise chain will stop unless the callback returns another Promise with the expected result type:
-
-```swift
-let promise = myAsyncFunction();
-promise.then({ (result: Int) -> Promise<String> in
-	print("We have the 1st result: \(result)");
-	return myAsyncStringFunction();
-}).catch({ (error: Error) -> Void in
-	// we caught an error, but we still want the next operation to happen
-	// return a promise with a resolved String value
-	return Promise<String>.resolve("hello world");
-}).then({ (result: String) in
-	print("We have the 2nd result: \(result)");
-});
-```
-
 Note that this behaviour is different than JavaScript's Promise, [where the chain will continue executing after a `catch` callback](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/catch).
 
 ### Await / Async
