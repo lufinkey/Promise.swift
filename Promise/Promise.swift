@@ -712,6 +712,15 @@ public func sync<Result>(_ executor: @escaping () throws -> Result) -> Promise<R
 	});
 }
 
+public func sync<Result>(_ executor: @escaping () -> Promise<Result>) -> Promise<Result> {
+	return Promise<Result>({ (resolve, reject) in
+		DispatchQueue.main.async {
+			let promise = executor();
+			promise.then(onresolve: resolve, onreject: reject);
+		};
+	});
+}
+
 
 public func await<Result>(queue: DispatchQueue = DispatchQueue.global(), _ promise: Promise<Result>) throws -> Result {
 	return try promise.await(queue: queue);
