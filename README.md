@@ -123,11 +123,11 @@ func myLinearAsyncFunction2() -> Promise<Int>
 
 ### Queues
 
-Both the `then` and `catch` function accept a `queue` argument to specify which DispatchQueue the callback should get called on. By default, `queue` is set to DispatchQueue.main.
+Both the `then` and `catch` function accept a `on: queue` argument to specify which DispatchQueue the callback should get called on. By default, `queue` is set to DispatchQueue.main.
 
 ```swift
 let promise = myAsyncFunction();
-promise.then(queue: DispatchQueue.global(), { (result: Int) in
+promise.then(on: DispatchQueue.global(), { (result: Int) in
 	// this will get called in a background queue
 	print("We have the result: \(result)");
 });
