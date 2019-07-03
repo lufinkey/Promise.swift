@@ -131,7 +131,7 @@ public class Promise<Result> {
 	
 	// handle promise resolution / rejection
 	@discardableResult
-	public func then(queue: DispatchQueue = DispatchQueue.main, onresolve resolveHandler: @escaping Then<Void>, onreject rejectHandler: @escaping Catch<Error,Void>) -> Promise<Void> {
+	public func then(on queue: DispatchQueue = DispatchQueue.main, onresolve resolveHandler: @escaping Then<Void>, onreject rejectHandler: @escaping Catch<Error,Void>) -> Promise<Void> {
 		return Promise<Void>({ (resolve, reject) in
 			sync.lock();
 			switch(state) {
@@ -168,7 +168,7 @@ public class Promise<Result> {
 	
 	// handle promise resolution
 	@discardableResult
-	public func then(queue: DispatchQueue = DispatchQueue.main, _ resolveHandler: @escaping ThenThrows<Void>) -> Promise<Void> {
+	public func then(on queue: DispatchQueue = DispatchQueue.main, _ resolveHandler: @escaping ThenThrows<Void>) -> Promise<Void> {
 		return Promise<Void>({ (resolve, reject) in
 			sync.lock();
 			switch(state) {
@@ -210,7 +210,7 @@ public class Promise<Result> {
 	}
 	
 	// handle promise resolution
-	public func then<NextResult>(queue: DispatchQueue = DispatchQueue.main, _ resolveHandler: @escaping Then<Promise<NextResult>>) -> Promise<NextResult> {
+	public func then<NextResult>(on queue: DispatchQueue = DispatchQueue.main, _ resolveHandler: @escaping Then<Promise<NextResult>>) -> Promise<NextResult> {
 		return Promise<NextResult>({ (resolve, reject) in
 			sync.lock();
 			switch(state) {
@@ -255,7 +255,7 @@ public class Promise<Result> {
 	
 	// handle promise rejection with generic Error
 	@discardableResult
-	public func `catch`(queue: DispatchQueue = DispatchQueue.main, _ rejectHandler: @escaping CatchThrows<Error,Result>) -> Promise<Result> {
+	public func `catch`(on queue: DispatchQueue = DispatchQueue.main, _ rejectHandler: @escaping CatchThrows<Error,Result>) -> Promise<Result> {
 		return Promise<Result>({ (resolve, reject) in
 			sync.lock();
 			switch(state) {
@@ -298,7 +298,7 @@ public class Promise<Result> {
 	
 	// handle promise rejection with specialized Error
 	@discardableResult
-	public func `catch`<ErrorType: Error>(queue: DispatchQueue = DispatchQueue.main, _ rejectHandler: @escaping CatchThrows<ErrorType,Result>) -> Promise<Result> {
+	public func `catch`<ErrorType: Error>(on queue: DispatchQueue = DispatchQueue.main, _ rejectHandler: @escaping CatchThrows<ErrorType,Result>) -> Promise<Result> {
 		return Promise<Result>({ (resolve, reject) in
 			sync.lock();
 			switch(state) {
@@ -350,7 +350,7 @@ public class Promise<Result> {
 	}
 	
 	// handle promise rejection with generic Error + continue
-	public func `catch`(queue: DispatchQueue = DispatchQueue.main, _ rejectHandler: @escaping Catch<Error,Promise<Result>>) -> Promise<Result> {
+	public func `catch`(on queue: DispatchQueue = DispatchQueue.main, _ rejectHandler: @escaping Catch<Error,Promise<Result>>) -> Promise<Result> {
 		return Promise<Result>({ (resolve, reject) in
 			sync.lock();
 			switch(state) {
@@ -360,7 +360,7 @@ public class Promise<Result> {
 				});
 				rejecters.append({ (error: Error) in
 					queue.async {
-						rejectHandler(error).then(queue: queue,
+						rejectHandler(error).then(on: queue,
 						onresolve: { (result: Result) in
 							resolve(result);
 						},
@@ -378,7 +378,7 @@ public class Promise<Result> {
 			case .rejected(let error):
 				sync.unlock();
 				queue.async {
-					rejectHandler(error).then(queue: queue,
+					rejectHandler(error).then(on: queue,
 					onresolve: { (result: Result) in
 						resolve(result);
 					},
@@ -392,7 +392,7 @@ public class Promise<Result> {
 	}
 	
 	// handle promise rejection + continue
-	public func `catch`<ErrorType: Error>(queue: DispatchQueue = DispatchQueue.main, _ rejectHandler: @escaping Catch<ErrorType,Promise<Result>>) -> Promise<Result> {
+	public func `catch`<ErrorType: Error>(on queue: DispatchQueue = DispatchQueue.main, _ rejectHandler: @escaping Catch<ErrorType,Promise<Result>>) -> Promise<Result> {
 		return Promise<Result>({ (resolve, reject) in
 			sync.lock();
 			switch(state) {
@@ -403,7 +403,7 @@ public class Promise<Result> {
 				rejecters.append({ (error: Error) in
 					if let error = error as? ErrorType {
 						queue.async {
-							rejectHandler(error).then(queue: queue,
+							rejectHandler(error).then(on: queue,
 							onresolve: { (result: Result) in
 								resolve(result);
 							},
@@ -426,7 +426,7 @@ public class Promise<Result> {
 				sync.unlock();
 				if let error = error as? ErrorType {
 					queue.async {
-						rejectHandler(error).then(queue: queue,
+						rejectHandler(error).then(on: queue,
 						onresolve: { (result: Result) in
 							resolve(result);
 						},
@@ -445,9 +445,9 @@ public class Promise<Result> {
 	
 	// handle promise resolution / rejection
 	@discardableResult
-	public func finally(queue: DispatchQueue = DispatchQueue.main, _ finallyHandler: @escaping () -> Void) -> Promise<Void> {
+	public func finally(on queue: DispatchQueue = DispatchQueue.main, _ finallyHandler: @escaping () -> Void) -> Promise<Void> {
 		return Promise<Void>({ (resolve, reject) in
-			self.then(queue: queue,
+			self.then(on: queue,
 			onresolve: { (result: Result) in
 				finallyHandler();
 				resolve(Void());
@@ -460,11 +460,11 @@ public class Promise<Result> {
 	}
 	
 	// handle promise resolution / rejection
-	public func finally<NextResult>(queue: DispatchQueue = DispatchQueue.main, _ finallyHandler: @escaping () -> Promise<NextResult>) -> Promise<NextResult> {
+	public func finally<NextResult>(on queue: DispatchQueue = DispatchQueue.main, _ finallyHandler: @escaping () -> Promise<NextResult>) -> Promise<NextResult> {
 		return Promise<NextResult>({ (resolve, reject) in
-			self.then(queue: queue,
+			self.then(on: queue,
 			onresolve: { (result: Result) in
-				finallyHandler().then(
+				finallyHandler().then(on: queue,
 				onresolve: { (result: NextResult) in
 					resolve(result);
 				},
@@ -473,7 +473,7 @@ public class Promise<Result> {
 				});
 			},
 			onreject: { (error: Error) in
-				finallyHandler().then(
+				finallyHandler().then(on: queue,
 				onresolve: { (result: NextResult) in
 					resolve(result);
 				},
@@ -485,10 +485,9 @@ public class Promise<Result> {
 	}
 	
 	// map to another result type
-	public func map<T>(queue: DispatchQueue = DispatchQueue.global(), _ transform: @escaping (Result) throws -> T) -> Promise<T> {
+	public func map<T>(on queue: DispatchQueue = DispatchQueue.global(), _ transform: @escaping (Result) throws -> T) -> Promise<T> {
 		return Promise<T>({ (resolve, reject) in
-			self.then(
-				queue: queue,
+			self.then(on: queue,
 				onresolve: { (result) in
 					do {
 						let mappedResult = try transform(result);
@@ -505,7 +504,7 @@ public class Promise<Result> {
 	}
 	
 	// block and await the result of the promise
-	public func await(queue: DispatchQueue = DispatchQueue.global()) throws -> Result {
+	public func await(on queue: DispatchQueue = DispatchQueue.global()) throws -> Result {
 		sync.lock();
 		switch(state) {
 		case let .resolved(result):
@@ -522,8 +521,7 @@ public class Promise<Result> {
 			var throwVal: Error? = nil;
 			let group = DispatchGroup();
 			group.enter();
-			self.then(
-				queue: queue,
+			self.then(on: queue,
 				onresolve: { (result) in
 					returnVal = result;
 					group.leave();
@@ -541,15 +539,15 @@ public class Promise<Result> {
 	}
 	
 	// convert promise type to Any
-	public func toAny(queue: DispatchQueue = DispatchQueue.global()) -> Promise<Any> {
-		return self.map(queue: queue, { (result) -> Any in
+	public func toAny(on queue: DispatchQueue = DispatchQueue.global()) -> Promise<Any> {
+		return self.map(on: queue, { (result) -> Any in
 			return result as Any;
 		});
 	}
 	
 	// convert promise type to Void
-	public func toVoid(queue: DispatchQueue = DispatchQueue.global()) -> Promise<Void> {
-		return self.map(queue: queue, { _ in });
+	public func toVoid(on queue: DispatchQueue = DispatchQueue.global()) -> Promise<Void> {
+		return self.map(on: queue, { _ in });
 	}
 	
 	// create a resolved promise
@@ -720,6 +718,6 @@ public func sync<Result>(_ executor: @escaping () -> Promise<Result>) -> Promise
 }
 
 
-public func await<Result>(queue: DispatchQueue = DispatchQueue.global(), _ promise: Promise<Result>) throws -> Result {
-	return try promise.await(queue: queue);
+public func await<Result>(on queue: DispatchQueue = DispatchQueue.global(), _ promise: Promise<Result>) throws -> Result {
+	return try promise.await(on: queue);
 }
