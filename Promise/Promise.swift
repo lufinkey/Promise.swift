@@ -542,16 +542,14 @@ public class Promise<Result> {
 	
 	// convert promise type to Any
 	public func toAny(queue: DispatchQueue = DispatchQueue.global()) -> Promise<Any> {
-		return Promise<Any>({ (resolve, reject) in
-			self.then(
-				queue: queue,
-				onresolve: { (result) in
-					resolve(result as Any);
-				},
-				onreject: { (error: Error) -> Void in
-					reject(error);
-				});
+		return self.map(queue: queue, { (result) -> Any in
+			return result as Any;
 		});
+	}
+	
+	// convert promise type to Void
+	public func toVoid(queue: DispatchQueue = DispatchQueue.global()) -> Promise<Void> {
+		return self.map(queue: queue, { _ in });
 	}
 	
 	// create a resolved promise
