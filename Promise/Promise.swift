@@ -156,6 +156,7 @@ public class Promise<Result> {
 					}
 				});
 			}
+			sync.unlock();
 			
 		case let .resolved(result):
 			sync.unlock();
